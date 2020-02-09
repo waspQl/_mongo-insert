@@ -26,7 +26,7 @@ jobs:
 
     - run: npm install
     - run: |
-        export port=28001
+        export PORT=28001
         npm test
       env:
         CI: true
