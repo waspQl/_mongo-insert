@@ -9,13 +9,13 @@ jobs:
       matrix:
         node-version: [12]
         mongodb-version: [4.2]
-      mongodb-port: [28001]
+        mongodb-port: [28001]
 
     services:
       mongodb:
         image: mongo:${{ matrix.mongodb-version }}
         ports:
-          - ${{ mongodb-port }}:27017
+          - ${{ matrix.mongodb-port }}:27017
 
     steps:
     - name: Git checkout
@@ -28,7 +28,7 @@ jobs:
     - run: npm install
     - name: npm test
       run: |
-        export PORT=${{ mongodb-port }}
+        export PORT=${{ matrix.mongodb-port }}
         npm test
       env:
         CI: true
