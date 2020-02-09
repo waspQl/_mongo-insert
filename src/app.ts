@@ -2,6 +2,14 @@ import mongodb from 'mongodb'
 const MongoClient = mongodb.MongoClient
 const assert = require('assert');
 
+interface InsertOneWriteOpResult {
+    insertedCount: number;
+    ops: Array<any>;
+    insertedId: any;
+    connection: any;
+    result: { ok: number, n: number }
+}
+
 // 引数が渡ってきた場合はそれをport番号として使う
 let port = 27017
 if (
@@ -19,32 +27,52 @@ const collectionName = 'testCollection'
 MongoClient.connect(url, async (err, db) => {
   if (err) throw err
   const dbo = db.db(dbName)
-  const collection = dbo.collection(collectionName)
 
+  await insertOne(dbo, (res: InsertOneWriteOpResult) => {
+    assert.equal(1, res.insertedCount)
+  })
+
+  await insertMany(dbo, (res: InsertOneWriteOpResult) => {
+    assert.equal(2, res.insertedCount)
+  })
+
+  await drop(dbo, (res: boolean) => {
+    assert.equal(true, res)
+    db.close()
+  })
+})
+
+
+const insertOne = async (db: mongodb.Db, callback: (msg: InsertOneWriteOpResult) => void) => {
   const obj = { a: '0' }
+
+  await db.collection(collectionName)
+    .insertOne(obj, (err: Error, res: InsertOneWriteOpResult) => {
+      if (err) throw err
+      callback(res)
+    })
+}
+
+const insertMany = async (db: mongodb.Db, callback: (msg: any) => void) => {
   const ary = [
     { a: '1' },
     { a: '2' }
   ]
 
-  await collection.insertOne(obj, (err, res) => {
-    if (err) throw err
-    assert.equal(1, res.insertedCount)
-    return
-  })
-
-  await collection.insertMany(ary)
+  await db.collection(collectionName)
+    .insertMany(ary)
     .then(res => {
-      assert.equal(ary.length, res.insertedCount)
+      callback(res)
     })
     .catch(err => {
       throw err
     })
+}
 
-  await collection.drop(async (err, res) => {
-    if (err) throw err
-    assert.equal(true, res)
-
-    db.close()
-  })
-})
+const drop = async (db: mongodb.Db, callback: (msg: boolean) => void) => {
+  await db.collection(collectionName)
+    .drop(async (err, res) => {
+      if (err) throw err
+      callback(res)
+    })
+}
