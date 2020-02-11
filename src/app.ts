@@ -1,7 +1,6 @@
 import mongodb from 'mongodb'
 const MongoClient = mongodb.MongoClient
 const assert = require('assert')
-const { performance } = require('perf_hooks')
 
 interface InsertOneWriteOpResult {
   result: { ok: number, n: number }
@@ -42,14 +41,14 @@ MongoClient.connect(url, async (err, db) => {
   const dbo = db.db(dbName)
 
   const obj = { a: '0' }
-  let startTime = performance.now()
+  let startTime = Date.now()
   await insertOne(dbo, obj, (res: InsertOneWriteOpResult) => {
     assert.equal(1, res.insertedCount)
   })
-  let endTime = performance.now()
+  let endTime = Date.now()
   console.log(
-    'insertOne performance:',
-    Math.floor(endTime - startTime),
+    'insertOne Date:',
+    endTime - startTime,
     'msec'
   )
 
@@ -59,25 +58,25 @@ MongoClient.connect(url, async (err, db) => {
     .map(val => {
       return {a: val}
     })
-  startTime = performance.now()
+  startTime = Date.now()
   await insertMany(dbo, ary, (res: InsertOneWriteOpResult) => {
     assert.equal(aryLength, res.insertedCount)
   })
-  endTime = performance.now()
+  endTime = Date.now()
   console.log(
-    'insertMany performance:',
-    Math.floor(endTime - startTime),
+    'insertMany Date:',
+    endTime - startTime,
     'msec'
   )
 
-  startTime = performance.now()
+  startTime = Date.now()
   await bulkInsert(dbo, ary, (res: BulkWriteResult) => {
     assert.equal(aryLength, res.nInserted)
   })
-  endTime = performance.now()
+  endTime = Date.now()
   console.log(
-    'bulkInsert performance:',
-    Math.floor(endTime - startTime),
+    'bulkInsert Date:',
+    endTime - startTime,
     'msec'
   )
 

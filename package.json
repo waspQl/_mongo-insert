@@ -5,8 +5,7 @@
     "test": "npx ts-node src/app.ts ${PORT}; unset PORT"
   },
   "dependencies": {
-    "assert": "2.0.0",
-    "perf_hooks": "0.0.1"
+    "assert": "2.0.0"
   },
   "devDependencies": {
     "@types/mongodb": "3.3.15",
