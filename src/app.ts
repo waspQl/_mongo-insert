@@ -1,5 +1,9 @@
-import mongodb from 'mongodb'
-const MongoClient = mongodb.MongoClient
+import {
+  MongoClient,
+  Db, // eslint-disable-line no-unused-vars
+  //InsertWriteOpResult, // eslint-disable-line no-unused-vars
+  BulkWriteResult // eslint-disable-line no-unused-vars
+} from 'mongodb'
 const assert = require('assert')
 
 interface InsertOneWriteOpResult {
@@ -9,19 +13,11 @@ interface InsertOneWriteOpResult {
   insertedId: any
 }
 
-interface BulkWriteResult {
-  result: {
-    ok: number
-    writeErrors: Array<any>
-    writeConcernErrors: Array<any>
-    insertedIds: Array<any>
-    nInserted: number
-    nUpserted: number
-    nMatched: number
-    nModified: number
-    nRemoved: number
-    upserted: Array<any>
-  }
+interface InsertWriteOpResult {
+  result: { ok: number, n: number }
+  ops: Array<any>
+  insertedCount: number
+  insertedIds: object
 }
 
 // 引数が渡ってきた場合はそれをport番号として使う
@@ -48,7 +44,7 @@ MongoClient.connect(url, async (err, db) => {
   let cnt = 0
   const obj = { a: 0 }
   updateStartTime()
-  await insertOne(dbo, obj, (res: InsertOneWriteOpResult) => {
+  await insertOne(dbo, obj, (res) => {
     updateEndTime()
     // console.log(res.ops)
     assert.equal(1, res.insertedCount)
@@ -63,7 +59,7 @@ MongoClient.connect(url, async (err, db) => {
       return {b: val}
     })
   updateStartTime()
-  await insertMany(dbo, ary1, (res: InsertOneWriteOpResult) => {
+  await insertMany(dbo, ary1, (res) => {
     updateEndTime()
     // console.log(res.ops)
     assert.equal(aryLength, res.insertedCount)
@@ -77,10 +73,10 @@ MongoClient.connect(url, async (err, db) => {
       return {c: val}
     })
   updateStartTime()
-  await bulkInsert(dbo, ary2, (res: BulkWriteResult) => {
+  await bulkInsert(dbo, ary2, (res) => {
     updateEndTime()
     // console.log(res.result.insertedIds)
-    assert.equal(aryLength, res.result.nInserted)
+    assert.equal(aryLength, res.nInserted)
     consoleTime('bulkInsert Date', endTime - startTime)
   })
   cnt += ary2.length
@@ -116,7 +112,7 @@ const consoleTime = (name: string, processingTime: number) => {
   )
 }
 
-const find = async (db: mongodb.Db, callback: (msg: any) => void) => {
+const find = async (db: Db, callback: (msg: any) => void) => {
   return await db.collection(collectionName)
     .find({ })
     .toArray((err, res) => {
@@ -125,7 +121,7 @@ const find = async (db: mongodb.Db, callback: (msg: any) => void) => {
     })
 }
 
-const insertOne = async (db: mongodb.Db, obj: object, callback: (msg: InsertOneWriteOpResult) => void) => {
+const insertOne = async (db: Db, obj: object, callback: (msg: InsertOneWriteOpResult) => void) => {
   await db.collection(collectionName)
     .insertOne(obj)
     .then(res => {
@@ -136,7 +132,7 @@ const insertOne = async (db: mongodb.Db, obj: object, callback: (msg: InsertOneW
     })
 }
 
-const insertMany = async (db: mongodb.Db, ary: Array<any>, callback: (msg: any) => void) => {
+const insertMany = async (db: Db, ary: Array<any>, callback: (msg: InsertWriteOpResult) => void) => {
   await db.collection(collectionName)
     .insertMany(ary)
     .then(res => {
@@ -147,7 +143,7 @@ const insertMany = async (db: mongodb.Db, ary: Array<any>, callback: (msg: any) 
     })
 }
 
-const bulkInsert = async (db: mongodb.Db, ary: Array<any>, callback: (msg: any) => void) => {
+const bulkInsert = async (db: Db, ary: Array<any>, callback: (msg: BulkWriteResult) => void) => {
   const bulk = db.collection(collectionName).initializeUnorderedBulkOp();
   ary.forEach(obj => {
     bulk.insert(obj);
@@ -159,7 +155,7 @@ const bulkInsert = async (db: mongodb.Db, ary: Array<any>, callback: (msg: any) 
   });
 }
 
-const drop = async (db: mongodb.Db, callback: (msg: boolean) => void) => {
+const drop = async (db: Db, callback: (msg: boolean) => void) => {
   await db.collection(collectionName)
     .drop(async (err, res) => {
       if (err) throw err
