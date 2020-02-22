@@ -56,7 +56,7 @@ MongoClient.connect(url, async (err, db) => {
   const ary1 = Array.from(new Array(aryLength))
     .map((v, i) => i)
     .map(val => {
-      return {b: val}
+      return { b: val }
     })
   updateStartTime()
   await insertMany(dbo, ary1, (res) => {
@@ -70,7 +70,7 @@ MongoClient.connect(url, async (err, db) => {
   const ary2 = Array.from(new Array(aryLength))
     .map((v, i) => i)
     .map(val => {
-      return {c: val}
+      return { c: val }
     })
   updateStartTime()
   await bulkInsert(dbo, ary2, (res) => {

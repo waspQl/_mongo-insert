@@ -1,7 +1,7 @@
 {
   "name": "root",
   "scripts": {
-    "lint": "eslint --ext .js,.ts .",
+    "lint": "eslint --ext .ts ./src",
     "test": "npx ts-node src/app.ts ${PORT}; unset PORT"
   },
   "dependencies": {
