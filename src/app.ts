@@ -4,21 +4,7 @@ import {
   //InsertWriteOpResult, // eslint-disable-line no-unused-vars
   BulkWriteResult // eslint-disable-line no-unused-vars
 } from 'mongodb'
-const assert = require('assert')
-
-interface InsertOneWriteOpResult {
-  result: { ok: number, n: number }
-  ops: Array<any>
-  insertedCount: number
-  insertedId: any
-}
-
-interface InsertWriteOpResult {
-  result: { ok: number, n: number }
-  ops: Array<any>
-  insertedCount: number
-  insertedIds: object
-}
+import assert from 'assert'
 
 // 引数が渡ってきた場合はそれをport番号として使う
 let port = 27017
@@ -35,6 +21,97 @@ const collectionName = 'testCollection'
 
 let startTime: number
 let endTime: number
+
+const updateStartTime = (): void => {
+  startTime = Date.now()
+}
+
+const updateEndTime = (): void => {
+  endTime = Date.now()
+}
+
+const consoleTime = (name: string, processingTime: number): void => {
+  const len = 16 - name.length
+
+  console.log(
+    name + (' '.repeat(len) + ':').slice(-1 * len),
+    processingTime,
+    'msec'
+  )
+}
+
+const find = async (db: Db, callback: (msg: any) => void) => {
+  return await db.collection(collectionName)
+    .find({})
+    .toArray((err, res) => {
+      if (err) throw err
+      callback(res)
+    })
+}
+
+interface InsertOneWriteOpResult {
+  result: {
+    ok: number;
+    n: number;
+  };
+  ops: Array<any>;
+  insertedCount: number;
+  insertedId: any;
+}
+
+interface InsertWriteOpResult {
+  result: {
+    ok: number;
+    n: number;
+  };
+  ops: Array<any>;
+  insertedCount: number;
+  insertedIds: object;
+}
+
+const insertOne = async (db: Db, obj: object, callback: (msg: InsertOneWriteOpResult) => void) => {
+  await db.collection(collectionName)
+    .insertOne(obj)
+    .then(res => {
+      callback(res)
+    })
+    .catch(err => {
+      throw err
+    })
+}
+
+const insertMany = async (db: Db, ary: Array<any>, callback: (msg: InsertWriteOpResult) => void) => {
+  await db.collection(collectionName)
+    .insertMany(ary)
+    .then(res => {
+      callback(res)
+    })
+    .catch(err => {
+      throw err
+    })
+}
+
+const bulkInsert = async (db: Db, ary: Array<any>, callback: (msg: BulkWriteResult) => void) => {
+  // - initializeUnorderedBulkOp 可能な限り実行する
+  // - initializeOrderedBulkOp エラー発生で処理を中断する
+  const bulk = db.collection(collectionName).initializeUnorderedBulkOp();
+  ary.forEach(obj => {
+    bulk.insert(obj);
+  })
+
+  await bulk.execute((err, res) => {
+    if (err) throw err
+    callback(res)
+  });
+}
+
+const drop = async (db: Db, callback: (msg: boolean) => void) => {
+  await db.collection(collectionName)
+    .drop(async (err, res) => {
+      if (err) throw err
+      callback(res)
+    })
+}
 
 // Connect using MongoClient
 MongoClient.connect(url, async (err, db) => {
@@ -93,72 +170,3 @@ MongoClient.connect(url, async (err, db) => {
     })
   })
 })
-
-const updateStartTime = () => {
-  startTime = Date.now()
-}
-
-const updateEndTime = () => {
-  endTime = Date.now()
-}
-
-const consoleTime = (name: string, processingTime: number) => {
-  const len = 16 - name.length
-
-  console.log(
-    name + (' '.repeat(len) + ':').slice(-1 * len),
-    processingTime,
-    'msec'
-  )
-}
-
-const find = async (db: Db, callback: (msg: any) => void) => {
-  return await db.collection(collectionName)
-    .find({ })
-    .toArray((err, res) => {
-      if (err) throw err
-      callback(res)
-    })
-}
-
-const insertOne = async (db: Db, obj: object, callback: (msg: InsertOneWriteOpResult) => void) => {
-  await db.collection(collectionName)
-    .insertOne(obj)
-    .then(res => {
-      callback(res)
-    })
-    .catch(err => {
-      throw err
-    })
-}
-
-const insertMany = async (db: Db, ary: Array<any>, callback: (msg: InsertWriteOpResult) => void) => {
-  await db.collection(collectionName)
-    .insertMany(ary)
-    .then(res => {
-      callback(res)
-    })
-    .catch(err => {
-      throw err
-    })
-}
-
-const bulkInsert = async (db: Db, ary: Array<any>, callback: (msg: BulkWriteResult) => void) => {
-  const bulk = db.collection(collectionName).initializeUnorderedBulkOp();
-  ary.forEach(obj => {
-    bulk.insert(obj);
-  })
-
-  await bulk.execute((err, res) => {
-    if (err) throw err
-    callback(res)
-  });
-}
-
-const drop = async (db: Db, callback: (msg: boolean) => void) => {
-  await db.collection(collectionName)
-    .drop(async (err, res) => {
-      if (err) throw err
-      callback(res)
-    })
-}
